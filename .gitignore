@@ -1,0 +1,13 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+web/dist/
+
+# 由 npm run sync-data 从 data/ 自动生成的副本
+web/public/data/
+web/*.tsbuildinfo
