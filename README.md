@@ -14,6 +14,7 @@
 
 ```
 .
+├── .github/workflows/      GitHub Pages 自动部署
 ├── raw/                    原始 PDF
 ├── data/
 │   ├── questions.json      解析产物（725 题，752 KB）
@@ -82,6 +83,32 @@ npm run build && npm run preview
 
 `npm run dev` / `npm run build` 会自动执行 `sync-data`，把根目录的 `data/`
 复制到 `web/public/data/`，不需要手动搬运。
+
+手机上想访问同一局域网内的这台机器：`npm run dev -- --host`。
+
+---
+
+## 部署到 GitHub Pages
+
+仓库带了 `.github/workflows/deploy-pages.yml`，推到 `main` 就会自动构建并发布，
+之后手机浏览器直接打开网址就能练，不用再起本地服务。
+
+**首次需要在仓库里开一次开关**：Settings → Pages → Build and deployment →
+Source 选 **GitHub Actions**（不是 Deploy from a branch）。
+
+开完之后：
+
+- 推送到 `main`，且改动涉及 `web/`、`data/` 或 workflow 本身 → 自动部署
+- 也可以在 Actions 页面手动触发（`workflow_dispatch`），**任意分支都行**，
+  不必等合并到 main
+
+发布地址：`https://<你的用户名>.github.io/<仓库名>/`
+
+站点挂在子路径下（不是域名根目录），Vite 的 `base` 设成了 `"./"`，
+资源、题库 JSON、配图全部用相对路径解析，所以本地和 Pages 用同一份构建产物。
+这一点已在子路径下实测验证（含不带斜杠地址的 301 跳转）。
+
+构建产物约 32 MB（其中 31 MB 是 453 张配图），Pages 的限额是 1 GB，很宽裕。
 
 ---
 
@@ -298,6 +325,9 @@ p326  [章节说明或索引行] 13miabe
    已在清洗层剥离并记入告警。
 5. 图形题的整块截图偶尔会带进下一行文字的顶部 —— 源 PDF 里图片 bbox
    本身就与文字有重叠。
+6. `npm audit` 会报 esbuild 的一个漏洞（影响 `vite dev` 的开发服务器，
+   不影响构建产物）。修复需要升级到 Vite 8，属于破坏性变更，暂未处理。
+   部署到 Pages 的是纯静态文件，不受影响。
 
 ## 常见问题
 

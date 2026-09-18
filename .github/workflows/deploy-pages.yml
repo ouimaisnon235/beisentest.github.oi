@@ -1,0 +1,67 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "data/**"
+      - ".github/workflows/deploy-pages.yml"
+  # 允许在合并到 main 之前，从任意分支手动触发一次部署
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个部署；新的推送不打断正在进行的发布
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: 安装依赖
+        working-directory: web
+        run: npm ci
+
+      # prebuild 会自动执行 sync-data，把仓库根部的 data/ 复制进 web/public/data/
+      - name: 构建
+        working-directory: web
+        run: npm run build
+
+      - name: 检查构建产物
+        working-directory: web
+        run: |
+          test -f dist/index.html || { echo "缺少 dist/index.html"; exit 1; }
+          test -f dist/data/questions.json || { echo "缺少题库数据，sync-data 可能没跑"; exit 1; }
+          echo "题目数: $(node -e "console.log(require('./dist/data/questions.json').length)")"
+          echo "图片数: $(find dist/data/images -name '*.png' | wc -l)"
+          echo "产物体积: $(du -sh dist | cut -f1)"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
