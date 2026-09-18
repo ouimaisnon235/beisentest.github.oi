@@ -50,6 +50,9 @@ jobs:
           echo "图片数: $(find dist/data/images -name '*.png' | wc -l)"
           echo "产物体积: $(du -sh dist | cut -f1)"
 
+      # 不加 enablement: true —— 实测 GITHUB_TOKEN 无权创建 Pages 站点
+      # （Create Pages site failed: Resource not accessible by integration），
+      # 加了只会把报错变成更难懂的权限错误。仓库需先手动开启 Pages，见 README。
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3

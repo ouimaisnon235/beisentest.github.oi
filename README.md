@@ -15,7 +15,6 @@
 ```
 .
 ├── .github/workflows/      GitHub Pages 自动部署
-├── vercel.json             Vercel 部署配置
 ├── raw/                    原始 PDF
 ├── data/
 │   ├── questions.json      解析产物（725 题，752 KB）
@@ -94,10 +93,30 @@ npm run build && npm run preview
 仓库带了 `.github/workflows/deploy-pages.yml`，推到 `main` 就会自动构建并发布，
 之后手机浏览器直接打开网址就能练，不用再起本地服务。
 
-**首次需要在仓库里开一次开关**：Settings → Pages → Build and deployment →
-Source 选 **GitHub Actions**（不是 Deploy from a branch）。
+**首次必须手动开启一次 Pages**：
 
-开完之后：
+> Settings → Pages → Build and deployment → Source 选 **GitHub Actions**
+> （不是 Deploy from a branch）
+
+这一步没法由 workflow 代劳。试过给 `actions/configure-pages` 加
+`enablement: true` 让它调 API 自动开启，实测被 GitHub 拒绝：
+
+```
+Get Pages site failed. Error: Not Found
+Create Pages site failed. Error: Resource not accessible by integration
+```
+
+workflow 的 `GITHUB_TOKEN` 没有创建 Pages 站点的权限，声明 `pages: write`
+也不够——该 API 要求仓库管理员权限。所以这一次点击是必须的，开启之后
+后续所有部署都是全自动。
+
+没开启时 workflow 会在 `configure-pages` 这步失败，报
+`Get Pages site failed ... Not Found`；前面的构建步骤都会正常通过，
+别看到 checkout、npm ci 成功就以为没问题。
+
+私有仓库的 Pages 需要付费计划；公开仓库免费可用。
+
+触发方式：
 
 - 推送到 `main`，且改动涉及 `web/`、`data/` 或 workflow 本身 → 自动部署
 - 也可以在 Actions 页面手动触发（`workflow_dispatch`），**任意分支都行**，
@@ -105,40 +124,14 @@ Source 选 **GitHub Actions**（不是 Deploy from a branch）。
 
 发布地址：`https://<你的用户名>.github.io/<仓库名>/`
 
-站点挂在子路径下（不是域名根目录），Vite 的 `base` 设成了 `"./"`，
-资源、题库 JSON、配图全部用相对路径解析，所以本地和 Pages 用同一份构建产物。
+站点挂在子路径下（`/<仓库名>/`，不是域名根目录），Vite 的 `base` 设成了 `"./"`，
+资源、题库 JSON、配图全部用相对路径解析，本地与线上共用同一份构建产物。
 这一点已在子路径下实测验证（含不带斜杠地址的 301 跳转）。
 
 构建产物约 32 MB（其中 31 MB 是 453 张配图），Pages 的限额是 1 GB，很宽裕。
 
 ---
 
-## 部署到 Vercel
-
-仓库根部的 `vercel.json` 已经配好，导入仓库即可，不用在面板里填任何构建设置：
-
-```jsonc
-{
-  "framework": null,          // 构建命令已显式给全，不走框架预设
-  "installCommand": "cd web && npm ci",
-  "buildCommand": "cd web && npm run build",
-  "outputDirectory": "web/dist"
-}
-```
-
-**前端在 `web/` 子目录里，仓库根目录没有 `package.json`。** 如果不做这个配置，
-Vercel 会在根目录找不到可构建的项目、产出空目录，站点每个路径都返回
-`404: NOT_FOUND`。
-
-**注意 Root Directory 必须保持仓库根目录（默认的 `./`）。** Vercel 只会读取
-Root Directory 下的 `vercel.json`；若把它改成 `web`，根部这份配置就不生效了，
-而且 `web/` 下的构建需要访问上一级的 `data/`，还要额外打开
-"Include source files outside of the Root Directory" 才行。保持默认最省事。
-
-Vercel 把站点挂在域名根目录（与 GitHub Pages 的子路径不同），`base: "./"`
-两种情况都兼容，同一份产物可以同时发到两边。
-
----
 
 ## 版式勘察结果
 
