@@ -93,12 +93,26 @@ npm run build && npm run preview
 仓库带了 `.github/workflows/deploy-pages.yml`，推到 `main` 就会自动构建并发布，
 之后手机浏览器直接打开网址就能练，不用再起本地服务。
 
-workflow 里的 `actions/configure-pages` 带了 `enablement: true`，会自己调 API
-把仓库的 Pages 开成 GitHub Actions 模式，**通常不需要手动去设置页点开关**。
+**首次必须手动开启一次 Pages**：
 
-若该步骤仍报 `Get Pages site failed ... Not Found`（组织策略可能禁止自动开启），
-手动开一次即可：Settings → Pages → Build and deployment → Source 选
-**GitHub Actions**（不是 Deploy from a branch），然后重跑 workflow。
+> Settings → Pages → Build and deployment → Source 选 **GitHub Actions**
+> （不是 Deploy from a branch）
+
+这一步没法由 workflow 代劳。试过给 `actions/configure-pages` 加
+`enablement: true` 让它调 API 自动开启，实测被 GitHub 拒绝：
+
+```
+Get Pages site failed. Error: Not Found
+Create Pages site failed. Error: Resource not accessible by integration
+```
+
+workflow 的 `GITHUB_TOKEN` 没有创建 Pages 站点的权限，声明 `pages: write`
+也不够——该 API 要求仓库管理员权限。所以这一次点击是必须的，开启之后
+后续所有部署都是全自动。
+
+没开启时 workflow 会在 `configure-pages` 这步失败，报
+`Get Pages site failed ... Not Found`；前面的构建步骤都会正常通过，
+别看到 checkout、npm ci 成功就以为没问题。
 
 私有仓库的 Pages 需要付费计划；公开仓库免费可用。
 
