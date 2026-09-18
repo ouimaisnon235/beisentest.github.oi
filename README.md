@@ -119,7 +119,7 @@ Source 选 **GitHub Actions**（不是 Deploy from a branch）。
 
 ```jsonc
 {
-  "framework": "vite",
+  "framework": null,          // 构建命令已显式给全，不走框架预设
   "installCommand": "cd web && npm ci",
   "buildCommand": "cd web && npm run build",
   "outputDirectory": "web/dist"
