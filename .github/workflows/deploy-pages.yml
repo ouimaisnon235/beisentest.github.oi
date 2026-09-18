@@ -50,7 +50,11 @@ jobs:
           echo "图片数: $(find dist/data/images -name '*.png' | wc -l)"
           echo "产物体积: $(du -sh dist | cut -f1)"
 
+      # enablement: true 让本 action 直接调 API 开启 Pages（build_type=workflow），
+      # 免去手动去 Settings → Pages 选 Source。需要 job 的 pages: write 权限，已在上面声明。
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
