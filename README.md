@@ -15,6 +15,7 @@
 ```
 .
 ├── .github/workflows/      GitHub Pages 自动部署
+├── vercel.json             Vercel 部署配置
 ├── raw/                    原始 PDF
 ├── data/
 │   ├── questions.json      解析产物（725 题，752 KB）
@@ -109,6 +110,33 @@ Source 选 **GitHub Actions**（不是 Deploy from a branch）。
 这一点已在子路径下实测验证（含不带斜杠地址的 301 跳转）。
 
 构建产物约 32 MB（其中 31 MB 是 453 张配图），Pages 的限额是 1 GB，很宽裕。
+
+---
+
+## 部署到 Vercel
+
+仓库根部的 `vercel.json` 已经配好，导入仓库即可，不用在面板里填任何构建设置：
+
+```jsonc
+{
+  "framework": "vite",
+  "installCommand": "cd web && npm ci",
+  "buildCommand": "cd web && npm run build",
+  "outputDirectory": "web/dist"
+}
+```
+
+**前端在 `web/` 子目录里，仓库根目录没有 `package.json`。** 如果不做这个配置，
+Vercel 会在根目录找不到可构建的项目、产出空目录，站点每个路径都返回
+`404: NOT_FOUND`。
+
+**注意 Root Directory 必须保持仓库根目录（默认的 `./`）。** Vercel 只会读取
+Root Directory 下的 `vercel.json`；若把它改成 `web`，根部这份配置就不生效了，
+而且 `web/` 下的构建需要访问上一级的 `data/`，还要额外打开
+"Include source files outside of the Root Directory" 才行。保持默认最省事。
+
+Vercel 把站点挂在域名根目录（与 GitHub Pages 的子路径不同），`base: "./"`
+两种情况都兼容，同一份产物可以同时发到两边。
 
 ---
 
